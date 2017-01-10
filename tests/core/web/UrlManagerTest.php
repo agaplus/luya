@@ -6,6 +6,7 @@ use Yii;
 use luya\web\UrlManager;
 use luya\web\Request;
 use luyatests\data\classes\UnitMenu;
+use luya\web\Composition;
 
 /**
  * @author nadar
@@ -253,5 +254,29 @@ class UrlManagerTest extends \luyatests\LuyaWebTestCase
         $r = $urlManager->createMenuItemUrl(['moduledoesnotexists/controller/action'], 3);
          
         $this->assertContains('moduledoesnotexists/controller/action', $r);
+    }
+    
+    /**
+     * @see https://github.com/luyadev/luya/issues/1146
+     */
+    public function testCompositionRuleWithHiddenLanguageButCompositionLangShortCodeMatching()
+    {
+        $request = new Request();
+        $request->pathInfo = 'mentions-legales';
+        $composition = new Composition($request, ['hidden' => true, 'default' => ['langShortCode' => 'fr']]);
+        $this->assertSame('fr', $composition->language);
+        $urlManager = new UrlManager();
+        $urlManager->composition = $composition;
+        $urlManager->addRules([
+            ['pattern' => '', 'route' => 'wirpre/default/index'],
+            ['pattern' => 'impressum', 'route' => 'wirpre/default/imprint', 'composition' => ['fr' => 'mentions-legales']],
+        ]);
+        $parsed = $urlManager->parseRequest($request);
+        
+        $this->assertSame($composition->hidden, $urlManager->composition->hidden);
+        $this->assertSame($composition->default, $urlManager->composition->default);
+        
+        
+        $resolver = $urlManager->composition->getResolvedPathInfo($request);
     }
 }

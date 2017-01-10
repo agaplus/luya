@@ -45,6 +45,16 @@ class UrlManager extends \yii\web\UrlManager
 
     private $_composition = null;
 
+    public function routeHasLanguageCompositionPrefix($route, $language)
+    {
+        $parts = explode("/", $route);
+        if (isset($parts[0]) && $parts[0] == $language) {
+            return true;
+        }
+        
+        return true;
+    }
+    
     /**
      * Extend functionality of parent::parseRequest() by verify and resolve the composition informations.
      *
@@ -62,12 +72,15 @@ class UrlManager extends \yii\web\UrlManager
         
         $parsedRequest = parent::parseRequest($request);
 
+        // ensure if the parsed route first match equals the composition pattern
+        
+        
         // if enableStrictParsing is enabled and the route is not found, $parsedRequest will return `false`.
-        if ($this->getComposition()->hidden || $parsedRequest === false) {
+        if ($this->composition->hidden || $parsedRequest === false || $this->routeHasLanguageCompositionPrefix($parsedRequest[0], $resolver['compositionKeys']['langShortCode'])) {
             return $parsedRequest;
         }
         
-        $composition = $this->getComposition()->full;
+        $composition = $this->composition->full;
         $length = strlen($composition);
         $route = $parsedRequest[0];
         
@@ -126,6 +139,16 @@ class UrlManager extends \yii\web\UrlManager
         return $this->_menu;
     }
 
+    /**
+     * Setter method for the composition component.
+     * 
+     * @param Composition $composition
+     */
+    public function setComposition(Composition $composition)
+    {
+        $this->_composition = $composition;
+    }
+    
     /**
      * Get the composition component
      *
